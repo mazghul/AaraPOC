@@ -30,7 +30,7 @@ import static android.view.View.Z;
  * Created by miguel on 5/29/15.
  */
 
-public class ApiAsyncTask extends AsyncTask<Void, Void, List<String>> {
+public class ApiAsyncTask extends AsyncTask<String, Void, List<Event>> {
     private MainActivity mActivity;
 
     /**
@@ -46,10 +46,10 @@ public class ApiAsyncTask extends AsyncTask<Void, Void, List<String>> {
      * @param params no parameters needed for this task.
      */
     @Override
-    protected List<String> doInBackground(Void... params) {
+    protected List<Event> doInBackground(String... params) {
         try {
-            return getDataFromApi();
-
+            List<Event> eventList = getDataFromApi(params[0],params[1]);
+            return eventList;
         } catch (final GooglePlayServicesAvailabilityIOException availabilityException) {
             mActivity.showGooglePlayServicesAvailabilityErrorDialog(
                     availabilityException.getConnectionStatusCode());
@@ -67,48 +67,45 @@ public class ApiAsyncTask extends AsyncTask<Void, Void, List<String>> {
         return null;
     }
 
+
+    @Override
+    protected void onPostExecute(List<Event> events) {
+        super.onPostExecute(events);
+        mActivity.initializeRecycler(events);
+    }
+
     /**
      * Fetch a list of the next 10 events from the primary calendar.
      * @return List of Strings describing returned events.
      * @throws IOException
      */
-    private List<String> getDataFromApi() throws IOException {
+    private List<Event> getDataFromApi(String end, String start) throws IOException {
         // List the next 10 events from the primary calendar.
         DateTime now = new DateTime(System.currentTimeMillis());
-        List<String> eventStrings = new ArrayList<String>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        List<Event> items = new ArrayList<>();
         try {
-            Date sdate = sdf.parse("2018-06-26 23:59");
-            Date eDate = sdf.parse("2018-06-26 00:00");
+            Date sdate = sdf.parse(start);
+            Date eDate = sdf.parse(end);
             DateTime sDT = new DateTime(sdate);
             DateTime eDT = new DateTime(eDate);
 
 
             Events events = mActivity.mService.events().list("primary")
                     .setMaxResults(10)
-                    .setTimeMin(eDT)
-                    .setTimeMax(sDT)
+                    .setTimeMin(sDT)
+                    .setTimeMax(eDT)
                     .setOrderBy("startTime")
                     .setSingleEvents(true)
                     .execute();
-            List<Event> items = events.getItems();
+           items = events.getItems();
             Log.d("items",items.toString());
-            for (Event event : items) {
-                DateTime start = event.getStart().getDateTime();
-                if (start == null) {
-                    // All-day events don't have start times, so just use
-                    // the start date.
-                    start = event.getStart().getDate();
-                }
-                eventStrings.add(
-                        String.format("%s (%s)", event.getSummary(), start));
-            }
 
         } catch (ParseException ex) {
             Log.v("Exception", ex.getLocalizedMessage());
 
         }
-        return eventStrings;
+        return items;
     }
 
 }

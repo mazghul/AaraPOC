@@ -11,11 +11,14 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.CalendarView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -33,10 +36,16 @@ import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.Events;
 import com.maz.aaraeventapp.R;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Arrays;
 
+import Adapters.EventAdapter;
 import Provider.ApiAsyncTask;
 
 public class MainActivity extends AppCompatActivity {
@@ -55,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_ACCOUNT_PICKER = 1000;
     public static final int REQUEST_AUTHORIZATION = 1001;
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
+    String startDate, endDate;
 
 
     @Override
@@ -64,7 +74,11 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         final Activity activity = this;
-
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        LocalDateTime now = LocalDateTime.now();
+        System.out.println(dtf.format(now));
+        startDate = now + " 00:00";
+        endDate = now + " 23:59";
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,8 +94,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSelectedDayChange(CalendarView view, int year, int month,
                                             int dayOfMonth) {
+                month = month == 12 ? 1 : month + 1 ;
                 Toast.makeText(getApplicationContext(), ""+dayOfMonth+"/" +month+"/"+year, Toast.LENGTH_SHORT).show();// TODO Auto-generated method stub
-                refreshResults();
+                startDate = year+"-"+month+"-"+dayOfMonth+" 00:00";
+                endDate = year+"-"+month+"-"+dayOfMonth+" 23:59";
+                refreshResults(endDate,startDate);
             }
         });
     }
@@ -130,22 +147,20 @@ public class MainActivity extends AppCompatActivity {
 
         mService = new Calendar.Builder(transport, jsonFactory, credential)
                 .setApplicationName("Aara Event").build();
+    }
 
-// Iterate over the events in the specified calendar
-       /* String pageToken = null;
-        do {
-            Events events = null;
-            try {
-                events = service.events().list("primary").setPageToken(pageToken).execute();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            List<Event> items = events.getItems();
-            for (Event event : items) {
-                System.out.println(event.getSummary());
-            }
-            pageToken = events.getNextPageToken();
-        } while (pageToken != null);*/
+
+    public void initializeRecycler(List<Event> events){
+
+            RecyclerView gRecycler = (RecyclerView) findViewById(R.id.gRecycler);
+            LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+            gRecycler.setLayoutManager(layoutManager);
+            EventAdapter eventAdapter = new EventAdapter(events, this);
+            gRecycler.setAdapter(eventAdapter);
+        if(events.size() == 0) {
+            TextView no_data = findViewById(R.id.no_g_data);
+            no_data.setVisibility(View.VISIBLE);
+        }
     }
 
 
@@ -167,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
         switch(requestCode) {
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode == RESULT_OK) {
-                    refreshResults();
+                    refreshResults(endDate,startDate);
                 } else {
                     isGooglePlayServicesAvailable();
                 }
@@ -184,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
                         SharedPreferences.Editor editor = settings.edit();
                         editor.putString(PREF_ACCOUNT_NAME, accountName);
                         editor.apply();
-                        refreshResults();
+                        refreshResults(endDate,startDate);
                     }
                 } else if (resultCode == RESULT_CANCELED) {
                     Toast.makeText(this, "Account unspecified.", Toast.LENGTH_LONG).show();
@@ -192,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case REQUEST_AUTHORIZATION:
                 if (resultCode == RESULT_OK) {
-                    refreshResults();
+                    refreshResults(endDate,startDate);
                 } else {
                     chooseAccount();
                 }
@@ -216,12 +231,12 @@ public class MainActivity extends AppCompatActivity {
      * email address isn't known yet, then call chooseAccount() method so the
      * user can pick an account.
      */
-    private void refreshResults() {
+    private void refreshResults(String end, String start) {
         if (credential.getSelectedAccountName() == null) {
             chooseAccount();
         } else {
             if (isDeviceOnline()) {
-                new ApiAsyncTask(this).execute();
+                new ApiAsyncTask(this).execute(end, start);
             } else {
                 Toast.makeText(this, "No network connection available.", Toast.LENGTH_LONG).show();
             }
