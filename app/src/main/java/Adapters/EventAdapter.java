@@ -10,12 +10,6 @@ import android.widget.TextView;
 
 import com.google.api.services.calendar.model.Event;
 import com.maz.aaraeventapp.R;
-
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-
-import java.util.Date;
 import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<ViewHolder> {

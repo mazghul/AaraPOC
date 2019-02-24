@@ -1,6 +1,5 @@
 package Provider;
 
-import android.content.Context;
 import android.util.Log;
 
 
@@ -16,7 +15,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.maz.aaraeventapp.Activity.EventAddActivity;
 
-import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
 

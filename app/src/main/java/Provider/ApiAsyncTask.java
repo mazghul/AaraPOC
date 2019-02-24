@@ -14,12 +14,10 @@ import com.maz.aaraeventapp.Activity.MainActivity;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static android.view.View.Z;
 
 /**
  * An asynchronous task that handles the Google Calendar API call.
