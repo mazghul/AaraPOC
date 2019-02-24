@@ -71,7 +71,7 @@ public class ApiAsyncTask extends AsyncTask<String, Void, List<Event>> {
     @Override
     protected void onPostExecute(List<Event> events) {
         super.onPostExecute(events);
-        mActivity.initializeRecycler(events);
+        mActivity.initializeRecyclerG(events);
     }
 
     /**

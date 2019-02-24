@@ -22,6 +22,7 @@ import java.io.UnsupportedEncodingException;
 
 import Model.AbstractResponse;
 import Model.Event;
+import Model.EventResponse;
 
 public class VolleyReq<T> extends JsonRequest<T> {
     protected static final String TAG = VolleyReq.class.getSimpleName();
@@ -30,9 +31,9 @@ public class VolleyReq<T> extends JsonRequest<T> {
     private static final int INITIAL_TIMEOUT_MS = 5000;
     private static final float BACKOFF_MULTIPLIER = 1.0f;
     private static final String HOST_NAME = "http://13.233.0.158:8080/";
-    private static final String URL_PREFIX =  HOST_NAME + "aara/";
-    private static final String ADD_EVENT = URL_PREFIX + "event/load";
-    //private static final String LOGIN_URL = URL_PREFIX_3 + "user/login";
+    private static final String URL_PREFIX = HOST_NAME + "aara/event/";
+    private static final String ADD_EVENT = URL_PREFIX + "load";
+    private static final String GET_EVENTS_FOR_DATE = URL_PREFIX + "getEventsByPeriod?startDate=%s&endDate=%s";
 
     private Class<T> responseClass;
 
@@ -70,12 +71,13 @@ public class VolleyReq<T> extends JsonRequest<T> {
                 .setClass(AbstractResponse.class);
     }
 
-    /*public static VolleyReq activate(Login login, Response.Listener<ActivateResponse> listener,
-                                                  Response.ErrorListener errorListener) {
-        return new VolleyReq(Method.POST, ACTIVATE_URL, login, listener, errorListener)
-                .setTag(Login.class.getSimpleName())
-                .setClass(ActivateResponse.class);
-    }*/
+    public static VolleyReq get_events(String startDate, String endDate, Response.Listener<EventResponse> listener,
+                                       Response.ErrorListener errorListener) {
+        String url = String.format(GET_EVENTS_FOR_DATE, startDate, endDate);
+        return new VolleyReq(url, listener, errorListener)
+                .setTag("Get Events")
+                .setClass(EventResponse.class);
+    }
 
     @Override
     protected Response<T> parseNetworkResponse(NetworkResponse response) {

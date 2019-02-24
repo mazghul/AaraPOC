@@ -17,10 +17,17 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.widget.CalendarView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.api.client.extensions.android.http.AndroidHttp;
@@ -36,6 +43,7 @@ import com.google.api.services.calendar.model.Event;
 import com.google.api.services.calendar.model.Events;
 import com.maz.aaraeventapp.R;
 
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -46,7 +54,10 @@ import java.util.List;
 import java.util.Arrays;
 
 import Adapters.EventAdapter;
+import Model.AbstractResponse;
+import Model.EventResponse;
 import Provider.ApiAsyncTask;
+import Provider.VolleyReq;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -59,13 +70,15 @@ public class MainActivity extends AppCompatActivity {
     final JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
     GoogleAccountCredential credential;
     private static final String PREF_ACCOUNT_NAME = "accountName";
-    private static final String[] SCOPES = { CalendarScopes.CALENDAR_READONLY };
+    private static final String[] SCOPES = {CalendarScopes.CALENDAR_READONLY};
 
     static final int REQUEST_ACCOUNT_PICKER = 1000;
     public static final int REQUEST_AUTHORIZATION = 1001;
     static final int REQUEST_GOOGLE_PLAY_SERVICES = 1002;
     String startDate, endDate;
-
+    ProgressBar progressBar3, progressBar4;
+    private RequestQueue mRequestQueue;
+    private Activity activity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,12 +86,17 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        final Activity activity = this;
+        activity = this;
+        mRequestQueue = Volley.newRequestQueue(this);
+        progressBar3 = findViewById(R.id.progressBar3);
+        progressBar4 = findViewById(R.id.progressBar4);
         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         LocalDateTime now = LocalDateTime.now();
         System.out.println(dtf.format(now));
         startDate = now + " 00:00";
         endDate = now + " 23:59";
+        getLocalData(endDate, startDate);
+        final DecimalFormat formatter = new DecimalFormat("00");
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -88,17 +106,18 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         initializeCalender();
-        CalendarView calendarView=(CalendarView) findViewById(R.id.calendarView);
+        CalendarView calendarView = (CalendarView) findViewById(R.id.calendarView);
         calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
 
             @Override
             public void onSelectedDayChange(CalendarView view, int year, int month,
                                             int dayOfMonth) {
-                month = month == 12 ? 1 : month + 1 ;
-                Toast.makeText(getApplicationContext(), ""+dayOfMonth+"/" +month+"/"+year, Toast.LENGTH_SHORT).show();// TODO Auto-generated method stub
-                startDate = year+"-"+month+"-"+dayOfMonth+" 00:00";
-                endDate = year+"-"+month+"-"+dayOfMonth+" 23:59";
-                refreshResults(endDate,startDate);
+                month = month == 12 ? 1 : month + 1;
+                Toast.makeText(getApplicationContext(), "" + formatter.format(dayOfMonth) + "/" + formatter.format(month) + "/" + year, Toast.LENGTH_SHORT).show();// TODO Auto-generated method stub
+                startDate = year + "-" + formatter.format(month) + "-" + formatter.format(dayOfMonth) + " 00:00";
+                endDate = year + "-" + formatter.format(month) + "-" + formatter.format(dayOfMonth) + " 23:59";
+                refreshResults(endDate, startDate);
+                getLocalData(endDate, startDate);
             }
         });
     }
@@ -107,7 +126,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (isGooglePlayServicesAvailable()) {
-
+            refreshResults(endDate, startDate);
+            getLocalData(endDate, startDate);
         } else {
             Toast.makeText(this, "Google Play Services required: " +
                     "after installing, close and relaunch this app.", Toast.LENGTH_LONG).show();
@@ -136,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void initializeCalender(){
+    private void initializeCalender() {
 
         SharedPreferences settings = getPreferences(Context.MODE_PRIVATE);
         credential = GoogleAccountCredential.usingOAuth2(
@@ -150,39 +170,43 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void initializeRecycler(List<Event> events){
-
-            RecyclerView gRecycler = (RecyclerView) findViewById(R.id.gRecycler);
+    public void initializeRecyclerG(List<Event> events) {
+        progressBar3.setVisibility(View.GONE);
+        TextView no_data = findViewById(R.id.no_g_data);
+        RecyclerView gRecycler = findViewById(R.id.gRecycler);
+        if (events.size() == 0) {
+            no_data.setVisibility(View.VISIBLE);
+            gRecycler.setVisibility(View.INVISIBLE);
+        } else {
+            no_data.setVisibility(View.GONE);
+            gRecycler.setVisibility(View.VISIBLE);
             LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
             gRecycler.setLayoutManager(layoutManager);
             EventAdapter eventAdapter = new EventAdapter(events, this);
             gRecycler.setAdapter(eventAdapter);
-        if(events.size() == 0) {
-            TextView no_data = findViewById(R.id.no_g_data);
-            no_data.setVisibility(View.VISIBLE);
         }
     }
-
 
 
     /**
      * Called when an activity launched here (specifically, AccountPicker
      * and authorization) exits, giving you the requestCode you started it with,
      * the resultCode it returned, and any additional data from it.
+     *
      * @param requestCode code indicating which activity result is incoming.
-     * @param resultCode code indicating the result of the incoming
-     *     activity result.
-     * @param data Intent (containing result data) returned by incoming
-     *     activity result.
+     * @param resultCode  code indicating the result of the incoming
+     *                    activity result.
+     * @param data        Intent (containing result data) returned by incoming
+     *                    activity result.
      */
     @Override
     protected void onActivityResult(
             int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        switch(requestCode) {
+        switch (requestCode) {
             case REQUEST_GOOGLE_PLAY_SERVICES:
                 if (resultCode == RESULT_OK) {
-                    refreshResults(endDate,startDate);
+                    refreshResults(endDate, startDate);
                 } else {
                     isGooglePlayServicesAvailable();
                 }
@@ -199,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
                         SharedPreferences.Editor editor = settings.edit();
                         editor.putString(PREF_ACCOUNT_NAME, accountName);
                         editor.apply();
-                        refreshResults(endDate,startDate);
+                        refreshResults(endDate, startDate);
                     }
                 } else if (resultCode == RESULT_CANCELED) {
                     Toast.makeText(this, "Account unspecified.", Toast.LENGTH_LONG).show();
@@ -207,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case REQUEST_AUTHORIZATION:
                 if (resultCode == RESULT_OK) {
-                    refreshResults(endDate,startDate);
+                    refreshResults(endDate, startDate);
                 } else {
                     chooseAccount();
                 }
@@ -236,6 +260,7 @@ public class MainActivity extends AppCompatActivity {
             chooseAccount();
         } else {
             if (isDeviceOnline()) {
+                progressBar3.setVisibility(View.VISIBLE);
                 new ApiAsyncTask(this).execute(end, start);
             } else {
                 Toast.makeText(this, "No network connection available.", Toast.LENGTH_LONG).show();
@@ -246,6 +271,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Checks whether the device currently has a network connection.
+     *
      * @return true if the device has a network connection, false otherwise.
      */
     private boolean isDeviceOnline() {
@@ -256,13 +282,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     /**
      * Check that Google Play services APK is installed and up to date. Will
      * launch an error dialog for the user to update Google Play Services if
      * possible.
+     *
      * @return true if Google Play Services is available and up to
-     *     date on this device; false otherwise.
+     * date on this device; false otherwise.
      */
     private boolean isGooglePlayServicesAvailable() {
         final int connectionStatusCode =
@@ -270,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
         if (GooglePlayServicesUtil.isUserRecoverableError(connectionStatusCode)) {
             showGooglePlayServicesAvailabilityErrorDialog(connectionStatusCode);
             return false;
-        } else if (connectionStatusCode != ConnectionResult.SUCCESS ) {
+        } else if (connectionStatusCode != ConnectionResult.SUCCESS) {
             return false;
         }
         return true;
@@ -279,8 +305,9 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Display an error dialog showing that Google Play Services is missing
      * or out of date.
+     *
      * @param connectionStatusCode code describing the presence (or lack of)
-     *     Google Play Services on this device.
+     *                             Google Play Services on this device.
      */
     public void showGooglePlayServicesAvailabilityErrorDialog(
             final int connectionStatusCode) {
@@ -295,4 +322,40 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
+    public void getLocalData(String endDate, String startDate) {
+        progressBar4.setVisibility(View.VISIBLE);
+        VolleyReq.get_events(startDate, endDate, new Response.Listener<EventResponse>() {
+            @Override
+            public void onResponse(EventResponse response) {
+                progressBar4.setVisibility(View.GONE);
+                initializeRecyclerL(response.getResponse());
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+            }
+        }).enqueue(mRequestQueue);
+    }
+
+    public void initializeRecyclerL(List<Model.Event> events) {
+        TextView no_data = findViewById(R.id.no_a_data);
+        RecyclerView lRecycler = findViewById(R.id.aaraRecycler);
+        progressBar4.setVisibility(View.GONE);
+        if (events.size() == 0) {
+            no_data.setVisibility(View.VISIBLE);
+            lRecycler.setVisibility(View.GONE);
+        } else {
+            no_data.setVisibility(View.GONE);
+            lRecycler.setVisibility(View.VISIBLE);
+            LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+            lRecycler.setLayoutManager(layoutManager);
+            EventAdapter eventAdapter = new EventAdapter(events, this, 1);
+            lRecycler.setAdapter(eventAdapter);
+        }
+
+    }
+
+
 }

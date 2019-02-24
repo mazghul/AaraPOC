@@ -23,7 +23,9 @@ public class EventAdapter extends RecyclerView.Adapter<ViewHolder> {
     private static final String TAG = EventAdapter.class.getSimpleName();
 
     private List<Event> mDataset;
+    private List<Model.Event> mGDataset;
     private Activity activity;
+    private int calender = 0;
 
     // Create new views (invoked by the layout manager)
     @Override
@@ -39,31 +41,42 @@ public class EventAdapter extends RecyclerView.Adapter<ViewHolder> {
     public EventAdapter(List<Event> items, Activity mActivity) {
         mDataset =items;
         activity = mActivity;
+    }
 
+    public EventAdapter(List<Model.Event> items, Activity mActivity, int cal) {
+        mGDataset = items;
+        activity = mActivity;
+        calender = cal;
     }
 
     // Return the size of your dataset (invoked by the layout manager)
     @Override
     public int getItemCount() {
-        return mDataset.size();
+        return calender == 0 ? mDataset.size() : mGDataset.size();
     }
 
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(final ViewHolder holder, final int position) {
         Log.i(TAG, "episode presenter on bind:" + position);
-        if (mDataset != null) {
+        if (mDataset != null && calender == 0) {
             final Event item = mDataset.get(holder.getAdapterPosition());
             holder.summary.setText(item.getSummary());
 
             String dtStr = item.getStart().getDateTime() == null ? (item.getStart().getDate()).toString() : item.getStart().getDateTime().toString();
             String edStr = item.getEnd().getDateTime() == null ? (item.getEnd().getDate()).toString() : item.getEnd().getDateTime().toString();
-
-            DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
-           // String dtStr = (String)  ();
             holder.sDate.setText(dtStr);
             holder.eDate.setText(edStr);
-            }
+        } else if (mGDataset != null && calender == 1) {
+            final Model.Event item = mGDataset.get(holder.getAdapterPosition());
+            holder.summary.setText(item.getSubject());
+
+            String dtStr = item.getStartDate();
+            String edStr = item.getEndDate();
+
+            holder.sDate.setText(dtStr);
+            holder.eDate.setText(edStr);
+        }
         }
 
      {

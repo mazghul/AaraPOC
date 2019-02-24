@@ -22,6 +22,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
 import com.maz.aaraeventapp.R;
 
+import java.text.DecimalFormat;
 import java.util.Calendar;
 
 import Model.AbstractResponse;
@@ -81,6 +82,7 @@ public class EventAddActivity extends AppCompatActivity implements View.OnClickL
         mHour = c.get(Calendar.HOUR_OF_DAY);
         mMinute = c.get(Calendar.MINUTE);
         final Activity activity = this;
+        final DecimalFormat formatter = new DecimalFormat("00");
 
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this,
@@ -88,7 +90,9 @@ public class EventAddActivity extends AppCompatActivity implements View.OnClickL
 
                     @Override
                     public void onDateSet(DatePicker view, final int year,
-                                          final int monthOfYear, final int dayOfMonth) {
+                                          int monthOfYear, final int dayOfMonth) {
+                        final int month = monthOfYear == 12 ? 1 : monthOfYear + 1;
+
 
                         TimePickerDialog timePickerDialog = new TimePickerDialog(activity,
                                 new TimePickerDialog.OnTimeSetListener() {
@@ -97,9 +101,9 @@ public class EventAddActivity extends AppCompatActivity implements View.OnClickL
                                     public void onTimeSet(TimePicker view, int hourOfDay,
                                                           int minute) {
                                         if (v == sDatePicker)
-                                            sDate.setText(year + "-" + monthOfYear + "-" + dayOfMonth + " " + hourOfDay + ":" + minute);
+                                            sDate.setText(year + "-" + formatter.format(month) + "-" + formatter.format(dayOfMonth) + " " + formatter.format(hourOfDay) + ":" + formatter.format(minute));
                                         else if (v == eDatePicker)
-                                            eDate.setText(year + "-" + monthOfYear + "-" + dayOfMonth + " " + hourOfDay + ":" + minute);
+                                            eDate.setText(year + "-" + formatter.format(month) + "-" + formatter.format(dayOfMonth) + " " + formatter.format(hourOfDay) + ":" + formatter.format(minute));
                                     }
                                 }, mHour, mMinute, false);
                         timePickerDialog.show();
