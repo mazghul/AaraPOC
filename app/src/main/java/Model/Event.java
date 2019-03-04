@@ -7,12 +7,20 @@ import lombok.Setter;
 @Setter
 
 public class Event {
-
+    private int id;
     private String startDate;
     private String endDate;
     private String toEmailId;
     private String subject;
     private String attachment;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
 
     public Event() {
     }

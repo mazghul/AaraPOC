@@ -58,8 +58,8 @@ public class ApiAsyncTask extends AsyncTask<String, Void, List<Event>> {
                     MainActivity.REQUEST_AUTHORIZATION);
 
         } catch (IOException e) {
-            Toast.makeText(mActivity, "The following error occurred: " +
-                    e.getMessage(), Toast.LENGTH_LONG).show();
+            /*Toast.makeText(mActivity, "The following error occurred: " +
+                    e.getMessage(), Toast.LENGTH_LONG).show();*/
 
         }
         return null;

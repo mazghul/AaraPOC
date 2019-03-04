@@ -166,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
         progressBar3.setVisibility(View.GONE);
         TextView no_data = findViewById(R.id.no_g_data);
         RecyclerView gRecycler = findViewById(R.id.gRecycler);
-        if (events.size() == 0) {
+        if (events == null || events.size() == 0) {
             no_data.setVisibility(View.VISIBLE);
             gRecycler.setVisibility(View.INVISIBLE);
         } else {
@@ -278,7 +278,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void getLocalData(String endDate, String startDate) {
         progressBar4.setVisibility(View.VISIBLE);
-        VolleyReq.get_events(startDate, endDate, new Response.Listener<EventResponse>() {
+        VolleyReq.get_all_events(new Response.Listener<EventResponse>() {
             @Override
             public void onResponse(EventResponse response) {
                 progressBar4.setVisibility(View.GONE);

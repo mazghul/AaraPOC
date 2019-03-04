@@ -32,6 +32,9 @@ public class VolleyReq<T> extends JsonRequest<T> {
     private static final String URL_PREFIX = HOST_NAME + "aara/event/";
     private static final String ADD_EVENT = URL_PREFIX + "load";
     private static final String GET_EVENTS_FOR_DATE = URL_PREFIX + "getEventsByPeriod?startDate=%s&endDate=%s";
+    private static final String GET_ALL = URL_PREFIX + "getAllEvents";
+    private static final String DELETE = URL_PREFIX + "deleteEventById?id=%d";
+    private static final String EDIT = URL_PREFIX + "updateEventsByEmail";
 
     private Class<T> responseClass;
 
@@ -76,6 +79,31 @@ public class VolleyReq<T> extends JsonRequest<T> {
                 .setTag("Get Events")
                 .setClass(EventResponse.class);
     }
+
+    public static VolleyReq get_all_events(Response.Listener<EventResponse> listener,
+                                       Response.ErrorListener errorListener) {
+        String url = String.format(GET_ALL);
+        return new VolleyReq(url, listener, errorListener)
+                .setTag("Get Events")
+                .setClass(EventResponse.class);
+    }
+
+    public static VolleyReq delete(int id, Response.Listener<AbstractResponse> listener,
+                                   Response.ErrorListener errorListener) {
+        String url = String.format(DELETE, id);
+        return new VolleyReq(url, listener, errorListener)
+                .setTag("Get Events")
+                .setClass(AbstractResponse.class);
+    }
+
+    public static VolleyReq edit(Event event, Response.Listener<AbstractResponse> listener,
+                                      Response.ErrorListener errorListener) {
+        return new VolleyReq(Method.POST, EDIT, event, listener, errorListener)
+                .setTag(EventAddActivity.class.getSimpleName())
+                .setClass(AbstractResponse.class);
+    }
+
+
 
     @Override
     protected Response<T> parseNetworkResponse(NetworkResponse response) {
