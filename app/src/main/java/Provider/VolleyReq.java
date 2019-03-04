@@ -28,7 +28,7 @@ public class VolleyReq<T> extends JsonRequest<T> {
     private static final int MAX_NUM_RETRIES = 3;
     private static final int INITIAL_TIMEOUT_MS = 5000;
     private static final float BACKOFF_MULTIPLIER = 1.0f;
-    private static final String HOST_NAME = "http://13.233.0.158:8080/";
+    private static final String HOST_NAME = "http://13.127.19.78:8080/";
     private static final String URL_PREFIX = HOST_NAME + "aara/event/";
     private static final String ADD_EVENT = URL_PREFIX + "load";
     private static final String GET_EVENTS_FOR_DATE = URL_PREFIX + "getEventsByPeriod?startDate=%s&endDate=%s";
